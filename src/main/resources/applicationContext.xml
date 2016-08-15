@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context" xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx.xsd http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop.xsd">
+
+    <!-- 引入外部属性文件 -->
+    <context:property-placeholder location="classpath:jdbc.properties" />
+
+    <!-- 配置Druid连接池 -->
+    <bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource" init-method="init" destroy-method="close">
+        <property name="driverClassName" value="${jdbc.driverClass}" />
+        <property name="url" value="${jdbc.url}" />
+        <property name="username" value="${jdbc.username}" />
+        <property name="password" value="${jdbc.password}" />
+        <property name="initialSize" value="1" />
+        <property name="maxActive" value="20" />
+    </bean>
+
+    <bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
+        <property name="dataSource" ref="dataSource" />
+    </bean>
+    <!-- 配置业务层类 -->
+    <bean id="accountService" class="com.sunnywr.transfer.service.AccountServiceImpl">
+        <property name="accountDao" ref="accountDao" />
+        <!--&lt;!&ndash; 注入事务管理模板 &ndash;&gt;-->
+        <!--<property name="transactionTemplate" ref="transactionTemplate" />-->
+    </bean>
+    <!-- 配置DAO层类 -->
+    <bean id="accountDao" class="com.sunnywr.transfer.dao.AccountDaoImpl">
+        <property name="jdbcTemplate" ref="jdbcTemplate" />
+    </bean>
+
+    <!-- 声明式3：基于注解的事务管理方式 -->
+    <!-- 配置事务管理器 -->
+    <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+    <property name="dataSource" ref="dataSource" />
+    </bean>
+    <!-- 允许注解事务 -->
+    <tx:annotation-driven transaction-manager="transactionManager" />
+
+    <!--&lt;!&ndash; 声明式2：基于AspectJ的XML方式 &ndash;&gt;-->
+    <!--&lt;!&ndash; 配置事务管理器 &ndash;&gt;-->
+    <!--<bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">-->
+        <!--<property name="dataSource" ref="dataSource" />-->
+    <!--</bean>-->
+
+    <!--&lt;!&ndash; 配置Advice &ndash;&gt;-->
+    <!--<tx:advice id="txAdvice" transaction-manager="transactionManager">-->
+        <!--<tx:attributes>-->
+            <!--<tx:method name="transfer" propagation="REQUIRED"/>-->
+        <!--</tx:attributes>-->
+    <!--</tx:advice>-->
+
+    <!--&lt;!&ndash; 配置AOP切面 &ndash;&gt;-->
+    <!--<aop:config>-->
+        <!--&lt;!&ndash; 配置切入点 &ndash;&gt;-->
+        <!--<aop:pointcut id="pointcut1" expression="execution(* com.sunnywr.transfer.service.AccountService+.*(..))" />-->
+        <!--&lt;!&ndash; 配置切面 &ndash;&gt;-->
+        <!--<aop:advisor advice-ref="txAdvice" pointcut-ref="pointcut1" />-->
+    <!--</aop:config>-->
+
+
+    <!--&lt;!&ndash; 声明式1：基于TransactionProxyFactoryBean &ndash;&gt;-->
+    <!--&lt;!&ndash; 配置事务管理器 &ndash;&gt;-->
+    <!--<bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">-->
+        <!--<property name="dataSource" ref="dataSource" />-->
+    <!--</bean>-->
+    <!--&lt;!&ndash; 配置业务层代理 &ndash;&gt;-->
+    <!--<bean id="accountServiceProxy" class="org.springframework.transaction.interceptor.TransactionProxyFactoryBean">-->
+        <!--<property name="target" ref="accountService" />-->
+        <!--&lt;!&ndash; 注入事务管理器 &ndash;&gt;-->
+        <!--<property name="transactionManager" ref="transactionManager" />-->
+        <!--&lt;!&ndash; 注入事务属性 &ndash;&gt;-->
+        <!--<property name="transactionAttributes">-->
+            <!--<props>-->
+                <!--&lt;!&ndash; props格式：-->
+                    <!--PROPAGATION:事务的传播行为-->
+                    <!--ISOLATION:事务的隔离级别-->
+                    <!--readOnly：只读-->
+                    <!-- -Exception：发生哪些异常回滚事务-->
+                    <!--+Exception：发生哪些异常事务不会滚-->
+                <!--&ndash;&gt;-->
+                <!--<prop key="transfer">PROPAGATION_REQUIRED</prop>-->
+            <!--</props>-->
+        <!--</property>-->
+    <!--</bean>-->
+
+    <!--&lt;!&ndash; 传统AOP方式 &ndash;&gt;-->
+    <!--&lt;!&ndash; 配置事务管理器 &ndash;&gt;-->
+    <!--<bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">-->
+        <!--<property name="dataSource" ref="dataSource" />-->
+    <!--</bean>-->
+
+    <!--&lt;!&ndash; 配置事务管理的模板 &ndash;&gt;-->
+    <!--<bean id="transactionTemplate" class="org.springframework.transaction.support.TransactionTemplate">-->
+        <!--<property name="transactionManager" ref="transactionManager" />-->
+    <!--</bean>-->
+</beans>
